@@ -1,0 +1,5 @@
+﻿  main.cpp
+c:\users\dluis\onedrive\documentos\visual studio 2015\projects\hangingmic\hangingmic\main.cpp(157): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+c:\users\dluis\onedrive\documentos\visual studio 2015\projects\hangingmic\hangingmic\main.cpp(159): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+c:\users\dluis\onedrive\documentos\visual studio 2015\projects\hangingmic\hangingmic\main.cpp(161): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+  hangingmic.vcxproj -> C:\Users\dluis\OneDrive\Documentos\Visual Studio 2015\Projects\hangingmic\Debug\hangingmic.exe
