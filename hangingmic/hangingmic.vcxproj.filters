@@ -29,5 +29,8 @@
     <ClInclude Include="microfonePendurado.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="holofote.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

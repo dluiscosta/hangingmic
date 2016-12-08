@@ -1,17 +1,19 @@
 #include <glut.h>
 #include <math.h>
-
+#include <gl.h>
+#include <glu.h>
 
 #include "camera.hpp"
 #include "microfone.hpp"
 #include "microfonePendurado.hpp"
+#include "holofote.hpp"
 
 using namespace std;
 
-#define PI 3.1415926535897932384626433832795
 
 Camera *camera;
 MicrofonePendurado *microfoneP;
+Holofote *holofote;
 
 void processaTecla(unsigned char key, int x, int y) { //processa input do teclado, se movendo para frente, trás ou para os lados
 	if (key == 'a') {
@@ -20,11 +22,17 @@ void processaTecla(unsigned char key, int x, int y) { //processa input do teclad
 	else if (key == 'd') {
 		camera->move(0, 10);
 	}
-	if (key == 'w') {
+	else if (key == 'w') {
 		camera->move(30, 0);
 	}
 	else if (key == 's') {
 		camera->move(-30, 0);
+	}
+	else if (key == 'l') {
+		if (holofote->getLigado())
+			holofote->desliga();
+		else
+			holofote->liga();
 	}
 }
 
@@ -78,94 +86,63 @@ void desenha() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	GLfloat v[4];
 
-	//esfera na origem do spotlight
-	glPushMatrix();
-		glTranslatef(2000, 2000, 3000);
-		glColor3f(0.3, 0.2, 0.1);
-		glutWireSphere(10, 5, 5);
-	glPopMatrix();
-
-
 	//plota o piso
 	glPushMatrix();
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glVertexPointer(3, GL_DOUBLE, 0, vertices);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_DOUBLE, 0, vertices);
 
-		v[0] = 0.5; v[1] = 0.5; v[2] = 0.5; v[3] = 1;
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, v);
-		v[0] = 0.5; v[1] = 0.5; v[2] = 0.5; v[3] = 1;
-		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, v);
+	v[0] = 0.5; v[1] = 0.5; v[2] = 0.5; v[3] = 1;
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, v);
+	v[0] = 0.5; v[1] = 0.5; v[2] = 0.5; v[3] = 1;
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, v);
+	v[0] = 0.3; v[1] = 0.3; v[2] = 0.3; v[3] = 1;
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, v);
+	v[0] = 0; v[1] = 0; v[2] = 0; v[3] = 1;
+	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, v);
 
-		glDrawElements(GL_TRIANGLE_STRIP, (width*height) + (width - 1)*(height - 2), GL_UNSIGNED_INT, indices);
-		glDisableClientState(GL_VERTEX_ARRAY);
+	glDrawElements(GL_TRIANGLE_STRIP, (width*height) + (width - 1)*(height - 2), GL_UNSIGNED_INT, indices);
+	glDisableClientState(GL_VERTEX_ARRAY);
 	glPopMatrix();
 
-	// posicao do spotlight
-	GLfloat p1[] = { 2000.0, 2000.0, 3000.0, 1 };
-	glLightfv(GL_LIGHT0, GL_POSITION, p1);
-	GLfloat p2[] = { -1.5, -1.3, -6.0 };
-	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, p2);
 
-
+	//plota o microfone
 	glPushMatrix();
-		//configura "material" luz
-		/*glDisable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		*/
-		/*
-		v[0] = 0; v[1] = 0; v[2] = 0; v[3] = 0;
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, v);
-		v[0] = 0; v[1] = 0; v[2] = 0; v[3] = 0;
-		glMaterialfv(GL_FRONT, GL_SPECULAR, v);
-		glMateriali(GL_FRONT, GL_SHININESS, 0);
-		v[0] = 1; v[1] = 0; v[2] = 1; v[3] = 0.5;
-		glMaterialfv(GL_FRONT, GL_AMBIENT, v);
-		*/
-		v[0] = 1; v[1] = 0; v[2] = 0; v[3] = 1;
-		glMaterialfv(GL_FRONT, GL_EMISSION, v);
+		glTranslatef(1500, 1500, 2500);
+	microfoneP->desenha();
+	glPopMatrix();
 
-		glTranslatef(1944, 1952, 2777);
+	
+	//plota o holofote
+	glPushMatrix();
+		glTranslatef(2000, 2000, 3000);
 
 		GLdouble nX[3], nY[3], nZ[3] = { -1.5, -1.3, -6 };
 		normaliza(nZ);
 
-		//novo eixo Y = - nZ x (0, 0, 1)
-		nY[0] = -nZ[1];
+		//novo eixo Y = nZ x (0, 0, 1)
+		nY[0] = nZ[1];
 		nY[1] = -nZ[0];
 		nY[2] = 0;
 		normaliza(nY);
 
 		//novo eixo X = nY x nZ
-		nX[0] = nY[1] * nZ[2] + nY[2] * nZ[1];
-		nX[1] = nY[0] * nZ[2] + nY[2] * nZ[0];
-		nX[2] = nY[1] * nZ[0] + nY[0] * nZ[1];
+		nX[0] = nY[1] * nZ[2] - nY[2] * nZ[1];
+		nX[1] = nY[2] * nZ[0] - nY[0] * nZ[2];
+		nX[2] = nY[0] * nZ[1] - nY[1] * nZ[0];
 		normaliza(nX);
 
 		GLdouble m[16] = { nX[0], nX[1], nX[2], 0,
-			nY[0], nY[1], nY[2], 0,
-			nZ[0], nZ[1], nZ[2], 0,
-			0, 0, 0, 1 };
+						   nY[0], nY[1], nY[2], 0,
+						   nZ[0], nZ[1], nZ[2], 0,
+							0, 0, 0, 1 };
+	
 		glMultMatrixd(m); //aplica a matriz de rotacao
 
-		GLUquadricObj *q1 = gluNewQuadric();
-		gluQuadricDrawStyle(q1, GLU_FILL); //gera o cilindro com as faces poligonais preenchidas
-		gluCylinder(q1, 50, 628, 3330, 20, 10); //anel inferior no pescoço do microfone
-
-		v[0] = 0; v[1] = 0; v[2] = 0; v[3] = 1;
-		glMaterialfv(GL_FRONT, GL_EMISSION, v);
-
-		glEnable(GL_DEPTH_TEST);
+		holofote->desenha();
 	glPopMatrix();
-	
-
-	glPushMatrix();
-		glTranslatef(1500, 1500, 2850);
-		microfoneP->desenha();
-	glPopMatrix();
-
 
 	glutSwapBuffers();
+	glutPostRedisplay();
 }
 
 
@@ -182,6 +159,8 @@ void alteraTamanhoJanela(GLsizei w, GLsizei h) {
 
 	widthJanela = w;
 	heightJanela = h;
+
+	camera->rotaciona(0, 0);
 }
 
 void geraPiso() {
@@ -234,23 +213,27 @@ int main(int argc, char **argv) {
 	glutInitWindowSize(widthJanela = 800, heightJanela = 800);
 	glutInitWindowPosition(10, 10);
 	glutCreateWindow("Tres objetos");
-	
+
+	glutSetCursor(GLUT_CURSOR_NONE);
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_LIGHTING);
 	glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 0); //apenas 1 face considerada por polígono
 
 	//iluminacao ambiente padrão desabilitada
-	GLfloat p4[] = { 0, 0, 0, 1 };
+	GLfloat p4[] = { 0.05, 0.05, 0.05, 1 };
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, p4);
 
-	camera = new Camera(1500, 0, 1530, 0, 1, 0, 0, 0, 1);
+	camera = new Camera(1500, 0, 1180, 0, 1, 0, 0, 0, 1);
 
 	microfoneP = new MicrofonePendurado(1240);
 
+	holofote = new Holofote(true);
+
 	geraPiso();
 
-	configuraSpotlight();
+	//configuraSpotlight();
 
 	glutDisplayFunc(desenha);
 	glutReshapeFunc(alteraTamanhoJanela);

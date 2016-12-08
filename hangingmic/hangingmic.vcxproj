@@ -149,6 +149,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.hpp" />
+    <ClInclude Include="holofote.hpp" />
     <ClInclude Include="microfone.hpp" />
     <ClInclude Include="microfonePendurado.hpp" />
   </ItemGroup>
