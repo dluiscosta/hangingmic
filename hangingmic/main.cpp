@@ -29,10 +29,11 @@ void processaTecla(unsigned char key, int x, int y) { //processa input do teclad
 }
 
 bool acabouDeEntrar = true;
+GLsizei widthJanela, heightJanela;
 
-void processaMovimentoPassivo(int x, int y) { //processa movimento do mouse sem botão apertado, olhando para os lados, cima ou baixo
-	static int centerX = glutGet(GLUT_WINDOW_WIDTH) / 2;
-	static int centerY = glutGet(GLUT_WINDOW_HEIGHT) / 2;
+void processaMovimentoPassivo(GLint x, GLint y) { //processa movimento do mouse sem botão apertado, olhando para os lados, cima ou baixo
+	int centerX = widthJanela / 2;
+	int centerY = heightJanela / 2;
 
 	if (x != centerX || y != centerY) {
 		if (!acabouDeEntrar) {
@@ -64,6 +65,14 @@ int *indices;
 int width = 60;
 int height = 60;
 
+void normaliza(GLdouble v[3]) {
+	GLdouble m = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+
+	v[0] /= m;
+	v[1] /= m;
+	v[2] /= m;
+}
+
 void desenha() {
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -94,12 +103,65 @@ void desenha() {
 	// posicao do spotlight
 	GLfloat p1[] = { 2000.0, 2000.0, 3000.0, 1 };
 	glLightfv(GL_LIGHT0, GL_POSITION, p1);
-	GLfloat p2[] = { -1.0, -1.0, -6.0 };
+	GLfloat p2[] = { -1.5, -1.3, -6.0 };
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, p2);
 
+
 	glPushMatrix();
-	glTranslatef(1500, 1500, 2850);
-	microfoneP->desenha();
+		//configura "material" luz
+		/*glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		*/
+		/*
+		v[0] = 0; v[1] = 0; v[2] = 0; v[3] = 0;
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, v);
+		v[0] = 0; v[1] = 0; v[2] = 0; v[3] = 0;
+		glMaterialfv(GL_FRONT, GL_SPECULAR, v);
+		glMateriali(GL_FRONT, GL_SHININESS, 0);
+		v[0] = 1; v[1] = 0; v[2] = 1; v[3] = 0.5;
+		glMaterialfv(GL_FRONT, GL_AMBIENT, v);
+		*/
+		v[0] = 1; v[1] = 0; v[2] = 0; v[3] = 1;
+		glMaterialfv(GL_FRONT, GL_EMISSION, v);
+
+		glTranslatef(1944, 1952, 2777);
+
+		GLdouble nX[3], nY[3], nZ[3] = { -1.5, -1.3, -6 };
+		normaliza(nZ);
+
+		//novo eixo Y = - nZ x (0, 0, 1)
+		nY[0] = -nZ[1];
+		nY[1] = -nZ[0];
+		nY[2] = 0;
+		normaliza(nY);
+
+		//novo eixo X = nY x nZ
+		nX[0] = nY[1] * nZ[2] + nY[2] * nZ[1];
+		nX[1] = nY[0] * nZ[2] + nY[2] * nZ[0];
+		nX[2] = nY[1] * nZ[0] + nY[0] * nZ[1];
+		normaliza(nX);
+
+		GLdouble m[16] = { nX[0], nX[1], nX[2], 0,
+			nY[0], nY[1], nY[2], 0,
+			nZ[0], nZ[1], nZ[2], 0,
+			0, 0, 0, 1 };
+		glMultMatrixd(m); //aplica a matriz de rotacao
+
+		GLUquadricObj *q1 = gluNewQuadric();
+		gluQuadricDrawStyle(q1, GLU_FILL); //gera o cilindro com as faces poligonais preenchidas
+		gluCylinder(q1, 50, 628, 3330, 20, 10); //anel inferior no pescoço do microfone
+
+		v[0] = 0; v[1] = 0; v[2] = 0; v[3] = 1;
+		glMaterialfv(GL_FRONT, GL_EMISSION, v);
+
+		glEnable(GL_DEPTH_TEST);
+	glPopMatrix();
+	
+
+	glPushMatrix();
+		glTranslatef(1500, 1500, 2850);
+		microfoneP->desenha();
 	glPopMatrix();
 
 
@@ -116,7 +178,10 @@ void alteraTamanhoJanela(GLsizei w, GLsizei h) {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	// Especifica a projeção perspectiva
-	gluPerspective(45, (GLfloat)GLUT_WINDOW_HEIGHT / (GLfloat)GLUT_WINDOW_WIDTH, 0.1, 10000);
+	gluPerspective(45, (GLdouble)w/(GLdouble)h, 0.1, 10000);
+
+	widthJanela = w;
+	heightJanela = h;
 }
 
 void geraPiso() {
@@ -153,7 +218,7 @@ void geraPiso() {
 }
 
 void configuraSpotlight() {
-	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 18.0);
+	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 12.0);
 	GLfloat p6[] = { 0.3, 0.3, 0.3, 1 };
 	glLightfv(GL_LIGHT0, GL_AMBIENT, p6);
 	GLfloat p7[] = { 0.8, 0.8, 0.8, 1 };
@@ -166,7 +231,7 @@ void configuraSpotlight() {
 int main(int argc, char **argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitWindowSize(800, 800);
+	glutInitWindowSize(widthJanela = 800, heightJanela = 800);
 	glutInitWindowPosition(10, 10);
 	glutCreateWindow("Tres objetos");
 	
@@ -179,7 +244,7 @@ int main(int argc, char **argv) {
 	GLfloat p4[] = { 0, 0, 0, 1 };
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, p4);
 
-	camera = new Camera(1500, 0, 1500, 0, 1, 0, 0, 0, 1);
+	camera = new Camera(1500, 0, 1530, 0, 1, 0, 0, 0, 1);
 
 	microfoneP = new MicrofonePendurado(1240);
 

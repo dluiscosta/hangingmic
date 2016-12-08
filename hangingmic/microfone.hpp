@@ -12,7 +12,7 @@ public:
 };
 
 Microfone::Microfone() {
-	 idTexturaCabeca = SOIL_load_OGL_texture("C:\\Users\\dluis\\OneDrive\\Documentos\\Visual Studio 2015\\Projects\\hangingmic\\Debug\\textura.bmp",
+	 idTexturaCabeca = SOIL_load_OGL_texture("C:\\Users\\unifdcosta\\Documents\\Visual Studio 2013\\Projects\\hangingmic3\\Debug\\textura.bmp",
 		SOIL_LOAD_AUTO,
 		SOIL_CREATE_NEW_ID,
 		SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_MULTIPLY_ALPHA
